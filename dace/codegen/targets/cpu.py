@@ -21,7 +21,8 @@ from dace.sdfg.scope import is_devicelevel_gpu, is_in_scope
 from dace.sdfg.validation import validate_memlet_data
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 from dace.codegen.targets import fpga
-
+from dace import dtypes
+from dace.codegen.tools.type_inference import infer_expr_type
 
 if TYPE_CHECKING:
     from dace.codegen.targets.framecode import DaCeCodeGenerator
@@ -2039,6 +2040,7 @@ class CPUCodeGen(TargetCodeGenerator):
     ):
         state_dfg = cfg.state(state_id)
         map_params = node.map.params
+        map_param_types = node.map.param_types
 
         result = callsite_stream
         map_header = ""
@@ -2133,6 +2135,12 @@ class CPUCodeGen(TargetCodeGenerator):
             # Emit nested loops
             for i, r in enumerate(node.map.range):
                 var = map_params[i]
+                if var in map_param_types.keys():
+                    var_type = map_param_types[var]
+                else:
+                    var_type = dtypes.result_type_of(infer_expr_type(r[0], state_dfg.symbols_defined_at(node)), 
+                                                     infer_expr_type(r[1], state_dfg.symbols_defined_at(node)))
+
                 begin, end, skip = r
 
                 if node.map.unroll:
@@ -2140,6 +2148,7 @@ class CPUCodeGen(TargetCodeGenerator):
                     if node.map.unroll_factor:
                         unroll_pragma += f" {node.map.unroll_factor}"
                     result.write(unroll_pragma, cfg, state_id, node)
+
 
                 result.write(
                     "for (int %s = %s; %s < %s; %s += %s) {\n" %
