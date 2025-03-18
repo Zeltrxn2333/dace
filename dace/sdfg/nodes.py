@@ -804,6 +804,8 @@ class MapEntry(EntryNode):
 
         :see: Map
     """
+    computational_units = DictProperty(key_type=str, value_type=int, desc="Computational units to use for this map", default=[])
+
 
     def __init__(self, map: 'Map', dynamic_inputs=None):
         super(MapEntry, self).__init__(dynamic_inputs or set())
@@ -865,7 +867,7 @@ class MapEntry(EntryNode):
             if p in self._map.param_types:
                 result[p] = self._map.param_types[p]
             else:
-                result[p] = dtypes.result_type_of(infer_expr_type(rng[0], symbols), 
+                result[p] = dtypes.result_type_of(infer_expr_type(rng[0], symbols),
                                                   infer_expr_type(rng[1], symbols))
 
         # Handle the dynamic map ranges.
@@ -955,6 +957,7 @@ class Map(object):
     unroll_factor = Property(dtype=int, allow_none=True, default=0,
                              desc="How much iterations should be unrolled."
                              " To prevent unrolling, set this value to 1.")
+    unroll_mask = ListProperty(element_type=bool, desc="Which dimensions to unroll, if None unroll all dims", allow_none=True, default=None)
     collapse = Property(dtype=int, default=1, desc="How many dimensions to collapse into the parallel range")
     debuginfo = DebugInfoProperty()
     is_collapsed = Property(dtype=bool, desc="Show this node/scope/state as collapsed", default=False)
@@ -975,6 +978,8 @@ class Map(object):
                               default=0,
                               desc="OpenMP schedule chunk size",
                               serialize_if=lambda m: m.schedule in dtypes.CPU_SCHEDULES)
+    omp_bind = Property(dtype=str, default=None, allow_none=True, desc="OpenMP bind policy (spread, close, master)")
+
 
     gpu_block_size = ListProperty(element_type=int,
                                   default=None,
@@ -990,6 +995,7 @@ class Map(object):
                                  serialize_if=lambda m: m.schedule in dtypes.GPU_SCHEDULES)
 
     gpu_force_syncthreads = Property(dtype=bool, desc="Force a call to the __syncthreads for the map", default=False)
+
 
     def __init__(self,
                  label,

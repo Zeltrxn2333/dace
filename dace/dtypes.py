@@ -19,8 +19,6 @@ class DeviceType(aenum.AutoNumberEnum):
     GPU = ()  #: GPU (AMD or NVIDIA)
     FPGA = ()  #: FPGA (Intel or Xilinx)
     Snitch = ()  #: Compute Cluster (RISC-V)
-    Ascend = ()
-    SoftHier = ()
 
 
 @undefined_safe_enum
@@ -77,6 +75,7 @@ class ScheduleType(aenum.AutoNumberEnum):
     Unrolled = ()  #: Unrolled code
     SVE_Map = ()  #: Arm SVE
     GPU_Default = () #: Default scope schedule for GPU code. Specializes to schedule GPU_Device and GPU_Global during inference.
+    GPU_Default = () #: Default scope schedule for GPU code. Specializes to schedule GPU_Device and GPU_Global during inference.
     GPU_Device = ()  #: Kernel
     GPU_ThreadBlock = ()  #: Thread-block code
     GPU_ThreadBlock_Dynamic = ()  #: Allows rescheduling work within a block
@@ -118,6 +117,24 @@ FPGA_STORAGES = [
     StorageType.FPGA_Local,
     StorageType.FPGA_Registers,
     StorageType.FPGA_ShiftRegister,
+]
+
+ASCEND_SCHEDULES = [
+    ScheduleType.Ascend_Device,
+    ScheduleType.Ascend_AiCoreGroup,
+    ScheduleType.Ascend_AiCore
+]
+
+ASCEND_STORAGES = [
+    StorageType.Ascend_Global,
+    StorageType.Ascend_A1,
+    StorageType.Ascend_A2,
+    StorageType.Ascend_B1,
+    StorageType.Ascend_B2,
+    StorageType.Ascend_CO1,
+    StorageType.Ascend_CO2,
+    StorageType.Ascend_VECIN,
+    StorageType.Ascend_VECOUT,
 ]
 
 ASCEND_SCHEDULES = [
@@ -789,6 +806,7 @@ class vector(typeclass):
 class stringtype(pointer):
     """
     A specialization of the string data type to improve
+    A specialization of the string data type to improve
     Python/generated code marshalling.
     Used internally when `str` types are given
     """
@@ -1025,6 +1043,7 @@ class callback(typeclass):
     def is_scalar_function(self) -> bool:
         """
         Returns True if the callback is a function that returns a scalar
+        value (or nothing). Scalar functions are the only ones that can be
         value (or nothing). Scalar functions are the only ones that can be
         used within a `dace.tasklet` explicitly.
         """
@@ -1620,6 +1639,7 @@ def is_array(obj: Any) -> bool:
 
 def is_gpu_array(obj: Any) -> bool:
     """
+    Returns True if an object is a GPU array, i.e., implements the
     Returns True if an object is a GPU array, i.e., implements the
     ``__cuda_array_interface__`` standard (supported by Numba, CuPy, PyTorch,
     etc.). If the interface is supported, pointers can be directly obtained using the

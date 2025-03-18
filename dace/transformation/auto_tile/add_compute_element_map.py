@@ -2,6 +2,7 @@
 """ This module contains classes and functions that implement the grid-strided map tiling
     transformation."""
 
+from operator import mul
 import dace
 from dace.sdfg import SDFG, SDFGState
 from dace.properties import ListProperty, Property, make_properties, SymbolicProperty
@@ -36,6 +37,24 @@ class AddComputeElementBlockMap(transformation.SingleStateTransformation):
         allow_none=True,
         desc="Schedule type to add",
     )
+    bind_var = Property(
+        dtype=str,
+        default=None,
+        allow_none=True,
+        desc="bind variable for OpenMP, spred or close",
+    )
+    schedule_var = Property(
+        dtype=str,
+        default=None,
+        allow_none=True,
+        desc="schedule variable for OpenMP",
+    )
+    num_threads = Property(
+        dtype=int,
+        default=None,
+        allow_none=True,
+        desc="num thread variable for OpenMP",
+    )
 
     @classmethod
     def expressions(cls):
@@ -51,10 +70,10 @@ class AddComputeElementBlockMap(transformation.SingleStateTransformation):
         ):
             return False
 
-        if self.schedule_to_add in dace.dtypes.ScheduleType.GPU_ThreadBlock:
+        if self.schedule_to_add in [dace.dtypes.ScheduleType.GPU_ThreadBlock]:
             if len(self.compute_element_group_dims) > 3:
                 return False
-            if reduce(self.compute_element_group_dims) > 1024:
+            if reduce(mul, self.compute_element_group_dims) > 1024:
                 return False
         # Passing it double ensures the user know what they are doing
         if self.map_entry.map.schedule != self.map_schedule:
@@ -104,6 +123,11 @@ class AddComputeElementBlockMap(transformation.SingleStateTransformation):
         # The dev map is a new map where the gpu_block_size param is not transferred over
         prev_entry = state.entry_node(map_entry)
         prev_entry.map.label = self.map_schedule.name + "Map"
+
+        if self.bind_var is not None:
+            map_entry.map.omp_bind = self.bind_var
+        if self.num_threads is not None:
+            prev_entry.map.omp_num_threads = self.num_threads
 
     @staticmethod
     def annotates_memlets():

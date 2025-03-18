@@ -1692,6 +1692,7 @@ class SDFGState(OrderedMultiDiConnectorGraph[nd.Node, mm.Memlet], ControlFlowBlo
         schedule=dtypes.ScheduleType.Default,
         location=None,
         debuginfo=None,
+        external_path: Optional[str] = None,
         symbol_type_mapping: Dict[str, dtypes.typeclass] = None
     ):
         """ Adds a nested SDFG to the SDFG state. """
@@ -2626,7 +2627,7 @@ class AbstractControlFlowRegion(OrderedDiGraph[ControlFlowBlock, 'dace.sdfg.Inte
         """
         return []
 
-    def replace_meta_accesses(self, replacements: dict) -> None:
+    def replace_meta_accesses(self, replacements: Dict[str, str]) -> None:
         """
         Replace accesses to specific data containers in reads or writes performed by the control flow region itself in
         meta accesses, such as in condition checks for conditional blocks or in loop conditions for loops, etc.
@@ -2735,7 +2736,7 @@ class AbstractControlFlowRegion(OrderedDiGraph[ControlFlowBlock, 'dace.sdfg.Inte
             for b_edge in parent.in_edges(self):
                 parent.add_edge(b_edge.src, self.start_block, b_edge.data)
                 parent.remove_edge(b_edge)
-            
+
             end_state = None
             if len(to_connect) > 0:
                 end_state = parent.add_state(self.label + '_end')
@@ -3337,6 +3338,8 @@ class LoopRegion(ControlFlowRegion):
         return read_memlets
 
     def replace_meta_accesses(self, replacements):
+        if self.loop_variable in replacements:
+            self.loop_variable = replacements[self.loop_variable]
         replace_in_codeblock(self.loop_condition, replacements)
         if self.init_statement:
             replace_in_codeblock(self.init_statement, replacements)
@@ -3495,7 +3498,7 @@ class ConditionalBlock(AbstractControlFlowRegion):
             if c is not None:
                 read_memlets.extend(memlets_in_ast(c.code[0], self.sdfg.arrays))
         return read_memlets
-    
+
     def _used_symbols_internal(self,
                                all_symbols: bool,
                                defined_syms: Optional[Set] = None,
@@ -3543,7 +3546,7 @@ class ConditionalBlock(AbstractControlFlowRegion):
         json['branches'] = [(condition.to_json() if condition is not None else None, cfg.to_json())
                             for condition, cfg in self._branches]
         return json
-    
+
     @classmethod
     def from_json(cls, json_obj, context=None):
         context = context or {'sdfg': None, 'parent_graph': None}
