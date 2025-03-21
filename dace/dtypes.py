@@ -50,6 +50,8 @@ class StorageType(aenum.AutoNumberEnum):
     Ascend_CO2 = ()
     Ascend_VECIN = ()
     Ascend_VECOUT = ()
+    Ascend_L1 = ()
+    Ascend_L2 = ()
     SoftHier_HBM = ()
     SoftHier_TCDM = ()
 
@@ -74,7 +76,6 @@ class ScheduleType(aenum.AutoNumberEnum):
     CPU_Persistent = ()  #: OpenMP parallel region
     Unrolled = ()  #: Unrolled code
     SVE_Map = ()  #: Arm SVE
-    GPU_Default = () #: Default scope schedule for GPU code. Specializes to schedule GPU_Device and GPU_Global during inference.
     GPU_Default = () #: Default scope schedule for GPU code. Specializes to schedule GPU_Device and GPU_Global during inference.
     GPU_Device = ()  #: Kernel
     GPU_ThreadBlock = ()  #: Thread-block code

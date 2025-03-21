@@ -19,7 +19,7 @@ from dace import config
 from dace import dtypes
 import itertools
 import numpy
-import cupy
+# import cupy
 from pathlib import Path
 import json
 from dace.sdfg.analysis.cutout import SDFGCutout
